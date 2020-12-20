@@ -53,9 +53,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>xyz.acrylicstyle</groupId>
-            <artifactId>NMSAPI-all</artifactId>
-            <version>0.0.1</version>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>18.0.0</version>
         </dependency>
     </dependencies>
 </project>

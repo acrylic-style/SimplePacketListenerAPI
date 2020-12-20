@@ -1,6 +1,8 @@
 package xyz.acrylicstyle.packetListener;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import xyz.acrylicstyle.packetListener.packet.ReceivedPacketHandler;
@@ -14,7 +16,10 @@ public interface SimplePacketListenerAPI {
 
     void eject(@NotNull Player player);
 
-    static void addReceivedPacketHandler(@NotNull ReceivedPacketHandler handler) {
+    static void addReceivedPacketHandler(@NotNull Plugin plugin, @NotNull ReceivedPacketHandler handler) {
+        Validate.notNull(plugin, "plugin cannot be null");
+        Validate.notNull(handler, "handler cannot be null");
+        SimplePacketListenerPlugin.receivedPacketHandlerOwnerMap.put(handler, plugin);
         SimplePacketListenerPlugin.globalReceivedPacketHandlers.add(handler);
     }
 
@@ -22,7 +27,10 @@ public interface SimplePacketListenerAPI {
         SimplePacketListenerPlugin.globalReceivedPacketHandlers.remove(handler);
     }
 
-    static void addSentPacketHandler(@NotNull SentPacketHandler handler) {
+    static void addSentPacketHandler(@NotNull Plugin plugin, @NotNull SentPacketHandler handler) {
+        Validate.notNull(plugin, "plugin cannot be null");
+        Validate.notNull(handler, "handler cannot be null");
+        SimplePacketListenerPlugin.sentPacketHandlerOwnerMap.put(handler, plugin);
         SimplePacketListenerPlugin.globalSentPacketHandlers.add(handler);
     }
 
@@ -30,7 +38,10 @@ public interface SimplePacketListenerAPI {
         SimplePacketListenerPlugin.globalSentPacketHandlers.remove(handler);
     }
 
-    static void addReceivedPacketHandler(@NotNull Player player, @NotNull ReceivedPacketHandler handler) {
+    static void addReceivedPacketHandler(@NotNull Player player, @NotNull Plugin plugin, @NotNull ReceivedPacketHandler handler) {
+        Validate.notNull(plugin, "plugin cannot be null");
+        Validate.notNull(handler, "handler cannot be null");
+        SimplePacketListenerPlugin.receivedPacketHandlerOwnerMap.put(handler, plugin);
         SimplePacketListenerPlugin.receivedPacketHandlers.get(player.getUniqueId()).add(handler);
     }
 
@@ -38,7 +49,10 @@ public interface SimplePacketListenerAPI {
         SimplePacketListenerPlugin.receivedPacketHandlers.get(player.getUniqueId()).remove(handler);
     }
 
-    static void addSentPacketHandler(@NotNull Player player, @NotNull SentPacketHandler handler) {
+    static void addSentPacketHandler(@NotNull Player player, @NotNull Plugin plugin, @NotNull SentPacketHandler handler) {
+        Validate.notNull(plugin, "plugin cannot be null");
+        Validate.notNull(handler, "handler cannot be null");
+        SimplePacketListenerPlugin.sentPacketHandlerOwnerMap.put(handler, plugin);
         SimplePacketListenerPlugin.sentPacketHandlers.get(player.getUniqueId()).add(handler);
     }
 

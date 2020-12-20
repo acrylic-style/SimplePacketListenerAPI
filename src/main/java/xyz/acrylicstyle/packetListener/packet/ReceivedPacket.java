@@ -1,8 +1,8 @@
 package xyz.acrylicstyle.packetListener.packet;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import util.Validate;
 
 public class ReceivedPacket implements CancellablePacket {
     private boolean cancelled = false;

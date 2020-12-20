@@ -7,36 +7,34 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import util.Collection;
-import util.CollectionList;
-import util.reflector.Reflector;
-import xyz.acrylicstyle.nmsapi.NMSAPI;
-import xyz.acrylicstyle.nmsapi.v1_8_8.craftbukkit.entity.CraftPlayer;
-import xyz.acrylicstyle.nmsapi.v1_8_8.minecraft.entity.EntityPlayer;
 import xyz.acrylicstyle.packetListener.handler.ChannelHandler;
 import xyz.acrylicstyle.packetListener.packet.ReceivedPacketHandler;
 import xyz.acrylicstyle.packetListener.packet.SentPacketHandler;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePacketListenerAPI, Listener {
     private static SimplePacketListenerPlugin plugin;
-    public static final CollectionList<SentPacketHandler> globalSentPacketHandlers = new CollectionList<>();
-    public static final CollectionList<ReceivedPacketHandler> globalReceivedPacketHandlers = new CollectionList<>();
-    public static final Collection<UUID, CollectionList<SentPacketHandler>> sentPacketHandlers = new Collection<>();
-    public static final Collection<UUID, CollectionList<ReceivedPacketHandler>> receivedPacketHandlers = new Collection<>();
+    static final Map<SentPacketHandler, Plugin> sentPacketHandlerOwnerMap = new HashMap<>();
+    static final Map<ReceivedPacketHandler, Plugin> receivedPacketHandlerOwnerMap = new HashMap<>();
+    public static final List<SentPacketHandler> globalSentPacketHandlers = new ArrayList<>();
+    public static final List<ReceivedPacketHandler> globalReceivedPacketHandlers = new ArrayList<>();
+    public static final Map<UUID, List<SentPacketHandler>> sentPacketHandlers = new HashMap<>();
+    public static final Map<UUID, List<ReceivedPacketHandler>> receivedPacketHandlers = new HashMap<>();
 
     @Deprecated
     public SimplePacketListenerPlugin() { SimplePacketListenerPlugin.plugin = this; }
-
-    @Deprecated
-    @Override
-    public void onLoad() {
-        Reflector.classLoader = this.getClassLoader();
-    }
 
     @Deprecated
     @Override
@@ -49,6 +47,35 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
     @Override
     public void onDisable() {
         Bukkit.getOnlinePlayers().forEach(this::eject);
+    }
+
+    @Deprecated
+    @EventHandler
+    public void onPluginDisable(PluginDisableEvent e) {
+        getLogger().info("[SimplePacketListenerAPI] Unregistering packet handlers for " + e.getPlugin().getName());
+        Plugin p = e.getPlugin();
+        List<SentPacketHandler> sentPacketHandlersToRemove = new ArrayList<>();
+        sentPacketHandlerOwnerMap.forEach((handler, plugin) -> {
+            if (plugin.equals(p)) {
+                sentPacketHandlers.forEach((uuid, handlers) -> handlers.forEach(h -> {
+                    if (h.equals(handler)) handlers.remove(h);
+                }));
+                globalSentPacketHandlers.remove(handler);
+            }
+            sentPacketHandlersToRemove.add(handler);
+        });
+        sentPacketHandlersToRemove.forEach(sentPacketHandlerOwnerMap::remove);
+        List<ReceivedPacketHandler> receivedPacketHandlersToRemove = new ArrayList<>();
+        receivedPacketHandlerOwnerMap.forEach((handler, plugin) -> {
+            if (plugin.equals(p)) {
+                receivedPacketHandlers.forEach((uuid, handlers) -> handlers.forEach(h -> {
+                    if (h.equals(handler)) handlers.remove(h);
+                }));
+                globalReceivedPacketHandlers.remove(handler);
+            }
+            receivedPacketHandlersToRemove.add(handler);
+        });
+        receivedPacketHandlersToRemove.forEach(receivedPacketHandlerOwnerMap::remove);
     }
 
     @Contract(pure = true)
@@ -69,20 +96,42 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
 
     @Override
     public void inject(@NotNull Player player) {
-        sentPacketHandlers.add(player.getUniqueId(), new CollectionList<>());
-        receivedPacketHandlers.add(player.getUniqueId(), new CollectionList<>());
-        EntityPlayer ep = EntityPlayer.getInstance(player);
-        Channel channel = ep.getPlayerConnection().getNetworkManager().getChannel();
+        sentPacketHandlers.put(player.getUniqueId(), new ArrayList<>());
+        receivedPacketHandlers.put(player.getUniqueId(), new ArrayList<>());
+        Channel channel = getChannel(player);
         ChannelHandler handler = new ChannelHandler(player);
-        channel.pipeline().addBefore("packet_handler", "SimplePacketListenerAPI", handler);
+        try {
+            channel.pipeline().addBefore("packet_handler", "SimplePacketListenerAPI", handler);
+        } catch (NoSuchElementException ex) {
+            Bukkit.getScheduler().runTaskLater(this, () -> channel.pipeline().addBefore("packet_handler", "SimplePacketListenerAPI", handler), 1);
+        }
     }
 
     @Override
     public void eject(@NotNull Player player) {
-        CraftPlayer cp = CraftPlayer.getInstance(player);
-        Channel channel = cp.getHandle().getPlayerConnection().getNetworkManager().getChannel();
+        Channel channel = getChannel(player);
         if (channel.pipeline().get(ChannelHandler.class) != null) {
             channel.pipeline().remove(ChannelHandler.class);
         }
+    }
+
+    @Contract(pure = true)
+    @NotNull
+    private static Channel getChannel(@NotNull Player player) {
+        try {
+            Object ep = player.getClass().getDeclaredMethod("getHandle").invoke(player);
+            Object pc = getField(ep, "playerConnection");
+            Object nm = getField(pc, "networkManager");
+            return (Channel) getField(nm, "channel");
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Contract(pure = true)
+    private static Object getField(Object obj, String f) throws ReflectiveOperationException {
+        Field field = obj.getClass().getDeclaredField(f);
+        field.setAccessible(true);
+        return field.get(obj);
     }
 }
