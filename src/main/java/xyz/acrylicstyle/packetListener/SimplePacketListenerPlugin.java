@@ -14,6 +14,7 @@ import util.Collection;
 import util.CollectionList;
 import util.reflector.Reflector;
 import xyz.acrylicstyle.nmsapi.NMSAPI;
+import xyz.acrylicstyle.nmsapi.v1_8_8.craftbukkit.entity.CraftPlayer;
 import xyz.acrylicstyle.nmsapi.v1_8_8.minecraft.entity.EntityPlayer;
 import xyz.acrylicstyle.packetListener.handler.ChannelHandler;
 import xyz.acrylicstyle.packetListener.packet.ReceivedPacketHandler;
@@ -78,7 +79,8 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
 
     @Override
     public void eject(@NotNull Player player) {
-        Channel channel = NMSAPI.getCraftPlayer(player).getHandle().getPlayerConnection().getNetworkManager().getChannel();
+        CraftPlayer cp = CraftPlayer.getInstance(player);
+        Channel channel = cp.getHandle().getPlayerConnection().getNetworkManager().getChannel();
         if (channel.pipeline().get(ChannelHandler.class) != null) {
             channel.pipeline().remove(ChannelHandler.class);
         }
