@@ -14,6 +14,7 @@ import util.Collection;
 import util.CollectionList;
 import util.reflector.Reflector;
 import xyz.acrylicstyle.nmsapi.NMSAPI;
+import xyz.acrylicstyle.nmsapi.v1_8_8.minecraft.entity.EntityPlayer;
 import xyz.acrylicstyle.packetListener.handler.ChannelHandler;
 import xyz.acrylicstyle.packetListener.packet.ReceivedPacketHandler;
 import xyz.acrylicstyle.packetListener.packet.SentPacketHandler;
@@ -69,7 +70,8 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
     public void inject(@NotNull Player player) {
         sentPacketHandlers.add(player.getUniqueId(), new CollectionList<>());
         receivedPacketHandlers.add(player.getUniqueId(), new CollectionList<>());
-        Channel channel = NMSAPI.getCraftPlayer(player).getHandle().getPlayerConnection().getNetworkManager().getChannel();
+        EntityPlayer ep = EntityPlayer.getInstance(player);
+        Channel channel = ep.getPlayerConnection().getNetworkManager().getChannel();
         ChannelHandler handler = new ChannelHandler(player);
         channel.pipeline().addBefore("packet_handler", "SimplePacketListenerAPI", handler);
     }
