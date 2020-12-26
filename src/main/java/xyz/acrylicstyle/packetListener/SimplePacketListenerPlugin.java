@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePacketListenerAPI, Listener {
     private static SimplePacketListenerPlugin plugin;
@@ -52,7 +57,7 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
     @Deprecated
     @EventHandler
     public void onPluginDisable(PluginDisableEvent e) {
-        getLogger().info("[SimplePacketListenerAPI] Unregistering packet handlers for " + e.getPlugin().getName());
+        //getLogger().info("[SimplePacketListenerAPI] Unregistering packet handlers for " + e.getPlugin().getName());
         Plugin p = e.getPlugin();
         List<SentPacketHandler> sentPacketHandlersToRemove = new ArrayList<>();
         sentPacketHandlerOwnerMap.forEach((handler, plugin) -> {
@@ -109,9 +114,21 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
 
     @Override
     public void eject(@NotNull Player player) {
-        Channel channel = getChannel(player);
-        if (channel.pipeline().get(ChannelHandler.class) != null) {
-            channel.pipeline().remove(ChannelHandler.class);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            executorService.submit(() -> {
+                Channel channel = getChannel(player);
+                if (channel.pipeline().get(ChannelHandler.class) != null) {
+                    channel.pipeline().remove(ChannelHandler.class);
+                }
+            }).get(3, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            executorService.shutdownNow();
+            throw new RuntimeException("Could not remove channel handler within 3 seconds for player " + player.getName(), e);
         }
     }
 
