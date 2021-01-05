@@ -1,3 +1,5 @@
 name: SimplePacketListenerAPI
 main: xyz.acrylicstyle.packetListener.SimplePacketListenerPlugin
 version: 1.0.0
+loadbefore:
+  - ViaVersion

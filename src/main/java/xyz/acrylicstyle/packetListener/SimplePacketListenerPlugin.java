@@ -9,7 +9,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import xyz.acrylicstyle.packetListener.handler.ChannelHandler;
@@ -29,7 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePacketListenerAPI, Listener {
+public class SimplePacketListenerPlugin extends AbstractSimplePacketListenerPlugin implements SimplePacketListenerAPI, Listener {
     private static SimplePacketListenerPlugin plugin;
     static final Map<SentPacketHandler, Plugin> sentPacketHandlerOwnerMap = new HashMap<>();
     static final Map<ReceivedPacketHandler, Plugin> receivedPacketHandlerOwnerMap = new HashMap<>();
@@ -45,12 +44,24 @@ public class SimplePacketListenerPlugin extends JavaPlugin implements SimplePack
     @Override
     public void onEnable() {
         Bukkit.getPluginManager().registerEvents(this, this);
-        Bukkit.getOnlinePlayers().forEach(this::inject);
+        if (Bukkit.getOnlinePlayers().size() > 0) {
+            getLogger().info("Injecting packet handlers to existing players");
+            Bukkit.getOnlinePlayers().forEach(this::inject);
+        }
     }
 
     @Deprecated
     @Override
     public void onDisable() {
+        try {
+            if (this.channel != null) {
+                getLogger().info("Closing listener " + this.channel);
+                this.channel.close();
+            }
+        } catch (RuntimeException ex) {
+            getLogger().warning("Failed to close listener " + this.channel);
+            ex.printStackTrace();
+        }
         Bukkit.getOnlinePlayers().forEach(this::eject);
     }
 
