@@ -31,32 +31,33 @@ public class HAProxyConfiguration {
         sb.append("Only edit these settings when you are using HAProxy or something.\n");
         sb.append("Also, enabling proxy_protocol might causes ViaVersion to stop working after /reload.\n");
         sb.append("Please restart the server if you see the error from ViaVersion in console.\n");
-        sb.append("Notes:\n");
+        sb.append("\n");
+        sb.append("Important notes:\n");
         sb.append(" - You cannot load plugin (by PlugMan or something) AFTER the server is fully started.\n");
-        sb.append(" - Breaks ViaVersion when you do /reload");
+        sb.append(" - Breaks ViaVersion when you do /reload\n");
         sb.append("\n");
         sb.append("proxy_protocol:\n");
         sb.append("    Sets whether enables PROXY protocol for usage from HAProxy etc.\n");
-        sb.append("    HAProxy features will be disabled if it is set to false.");
-        sb.append("    Default: false\n");
+        sb.append("    **HAProxy features will be disabled if it is set to false.**");
+        sb.append("    (Default: false)\n");
         sb.append("server_ip:\n");
         sb.append("    Set specific server IP / Hostname when you have multiple NICs.\n");
-        sb.append("    Requires proxy_protocol to work.\n");
-        sb.append("    Default: 'null'\n");
+        sb.append("    (Requires proxy_protocol to work.)\n");
+        sb.append("    (Default: 'null')\n");
         sb.append("port:\n");
         sb.append("    Sets port to listen HAProxy.\n");
         sb.append("    Specify -1 to replace main server port with HAProxy-enabled listener.\n");
         sb.append("    If you specify the port other than -1, then the HAProxy-enabled packet\n");
         sb.append("    listener will be created.\n");
-        sb.append("    Requires proxy_protocol to work.\n");
-        sb.append("    Default: -1\n");
+        sb.append("    (Requires proxy_protocol to work.)\n");
+        sb.append("    (Default: -1)\n");
         sb.append("epoll:\n");
         sb.append("    Whether to enable epoll on linux servers.\n");
         sb.append("    Epoll enables native enhancements to listener, and it is recommend to enable it.\n");
         sb.append("    Please note that epoll is not available on Windows etc, so epoll will not be used\n");
-        sb.append("    and the Netty IO will be used.");
-        sb.append("    Requires proxy_protocol to work.\n");
-        sb.append("    Default: true\n");
+        sb.append("    and the Netty IO will be used.\n");
+        sb.append("    (Requires proxy_protocol to work.)\n");
+        sb.append("    (Default: true)\n");
         sb.append("\n");
         sb.append("===== EXPERIMENTAL =====\n");
         sb.append("These settings are experimental and might not work, or may behave weird!\n");
@@ -66,8 +67,8 @@ public class HAProxyConfiguration {
         sb.append("    Whether to use reflection-based channel initializer when creating HAProxy-enabled\n");
         sb.append("    packet listener.\n");
         sb.append("    This setting has no effect when replacing main server port with HAProxy-enabled listener.\n");
-        sb.append("    Requires proxy_protocol to work.\n");
-        sb.append("    Default: false\n");
+        sb.append("    (Requires proxy_protocol to work.)\n");
+        sb.append("    (Default: false)\n");
         config.options().header(sb.toString());
         config.set("proxy_protocol", proxyProtocol);
         logger.info("==================================================");
@@ -140,7 +141,7 @@ public class HAProxyConfiguration {
     private void epoll() {
         epoll = config.getBoolean("useEpoll", true);
         config.set("epoll", epoll);
-        if (ReflectionUtil.getServerVersion().equals("v1_8_R1") || !Epoll.isAvailable()) {
+        if (/*ReflectionUtil.getServerVersion().equals("v1_8_R1") || */!Epoll.isAvailable()) {
             String message = "(Not supported: MC 1.8)";
             if (!Epoll.isAvailable()) {
                 String exMessage = Epoll.unavailabilityCause().getMessage();
